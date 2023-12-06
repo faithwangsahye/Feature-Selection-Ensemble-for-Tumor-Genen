@@ -27,3 +27,6 @@ Tutorials - [1](https://www.kaggle.com/residentmario/automated-feature-selection
 [INVASE](https://github.com/jsyoon0823/INVASE) - Instance-wise Variable Selection using Neural Networks.  
 [SubTab](https://github.com/AstraZeneca/SubTab) - Subsetting Features of Tabular Data for Self-Supervised Representation Learning, AstraZeneca.  
 [FeatureSelectionGA](https://github.com/kaushalshetty/FeatureSelectionGA) - Feature Selection using Genetic Algorithm.  
+# Subset Selection
+[apricot](https://github.com/jmschrei/apricot) - Selecting subsets of data sets to train machine learning models quickly.  
+[ducks](https://github.com/manimino/ducks) - Index data for fast lookup by any combination of fields.  
