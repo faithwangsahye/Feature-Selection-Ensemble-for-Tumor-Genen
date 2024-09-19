@@ -1,19 +1,136 @@
-# ML-Integrated-Models-for-Tumor-Feature-Selection
-在肿瘤特征基因集选择中，本项目旨在应用多种机器学习模型，以选取最优特征子集。
+# Feature Selection Ensemble for Tumor Gene Subset Selection
 
-- 首先，我们综合应用了目前可用于特征选择的多种机器学习算法，以获得具有良好分类效果的肿瘤特征基因用于模型构建。这些算法包括但不限于LightGBM、XGBoost和CatBoost。
-- 其次，完成了十余种特征选择算法的整理集成工作，由此得到了经过多重筛选后的特征子集。
-- 为了选取最优的集成排序参数，采用了网格算法进行标准化区间端点寻优。该算法能够系统地搜索参数空间，以找到最佳的参数组合，从而最大化模型性能。
-- 为了验证所选基因的有效性，采用了逐步回归的方法。通过逐步剔除非相关变量的统计技术，逐步选择和剔除变量，以确定对目标变量具有最大预测能力的变量。以此作为最终选出的特征子集并输出其 10x交叉测试精度。
-- 进行数据处理、建模、代码调试，包括不同数据集的可泛化性测验、特征选择算法参数区间的调整、模型构建以及性能评估等。
-- 通过以上的项目，展示在肿瘤特征选择中应用机器学习模型的方法，并通过整合多种算法、优化参数选择和验证基因的有效性来提升特征选择的准确性和效率。
+## Overview
 
+This project aims to apply various feature selection algorithms and machine learning models to RNA-seq data from different types of tumors to select the optimal gene subset for classification models. By integrating multiple feature selection methods, this package provides a comprehensive approach for identifying tumor-specific feature gene subsets, thus enhancing the accuracy and interpretability of tumor classification models.
 
-| Step | Explanation |
-|-------|-------|
-| Ranking | 分别实现九种特征选择算法，得到各自的特征重要性排序 |
-| RankingMerge | 把九种特征选择算法的基因排序整合至一张csv |
-| Counting | 取排名前200的基因【rankremain】，统计基因在9个算法重要性排名前200中出现的次数【df_genecounts】，和出现的基因有哪些【appeargene】（还剩1281个） |
-| Rerank | 将每个元素在【rankremain】各列中出现的序号填写到【Rerank】的对应列中 |
-| Scoring | 将【Rerank】中的序号转成分数，第一名：200分，最后一名：1分，NaN：0分 |
-| Standardize | 将数据进行标准化到自定义的范围内。 |
+## Features
+
+- **Multiple Feature Selection Algorithms**: The package integrates 14 distinct feature selection algorithms, including:
+  - LightGBM
+  - XGBoost
+  - CatBoost
+  - RandomForest
+  - AdaBoost
+  - Decision Tree
+  - ReliefF
+  - Fisher Score
+  - SPEC
+  - Laplacian Score
+  - MCFS (Multi-Cluster Feature Selection)
+  - Leshy (from ARFS package)
+  - f_score (Statistical feature selection)
+  - Linear Regression
+  
+  These algorithms have been carefully selected and implemented to provide diverse methods for selecting key tumor-specific genes.
+
+- **Ensemble Approach**: The package supports an ensemble of feature selection methods, allowing users to combine the results of multiple algorithms to create a robust, highly accurate feature ranking.
+
+- **Optimization for Best Parameters**: A scoring and optimization mechanism is included to fine-tune the ranking and selection process, ensuring the best performance for downstream classification tasks. The optimal parameters are determined by evaluating accuracy through cross-validation.
+
+- **Model Integration**: After feature selection, the package allows users to build machine learning models such as Support Vector Machines (SVM), XGBoost, LightGBM, and others, to validate the selected gene subsets.
+
+- **Cross-Validation and Evaluation**: Cross-validation is used to assess the accuracy and performance of the selected gene subset, with detailed outputs on model performance.
+
+## Installation
+
+To install this package, clone the repository and use the following command:
+
+```bash
+pip install .
+```
+
+Make sure you have the required dependencies installed. The major dependencies include:
+
+  - numpy
+  - pandas
+  - scikit-learn
+  - xgboost
+  - lightgbm
+  - catboost
+  - matplotlib
+  - skfeature
+  - arfs
+
+You can install these dependencies via pip:
+
+```bash
+pip install numpy pandas scikit-learn xgboost lightgbm catboost matplotlib skfeature arfs
+```
+
+## Usage
+
+### 1. Importing Data
+
+The data should be provided in a CSV format, where the rows correspond to different samples and the columns represent gene expression levels. A typical usage for importing data would look like this:
+
+```python
+from feature_selection_ensemble import data_import
+
+x, y, data, final, x_data, y_data, x_final, y_final, gene_name = data_import('path_to_data.csv')
+```
+
+### 2. Applying Feature Selection Algorithms
+
+Once the data is loaded, you can apply multiple feature selection algorithms and combine their outputs. For example:
+
+```python
+from feature_selection_ensemble import xgb_model, lgb_model, reliefF_model
+
+importance_list = pd.DataFrame()
+importance_list = xgb_model(x_data, y_data, importance_list, gene_name)
+importance_list = lgb_model(x_data, y_data, importance_list, gene_name)
+importance_list = reliefF_model(x_data, y_data, importance_list, gene_name)
+```
+
+3. Optimizing Feature Selection
+You can fine-tune the ranking of selected features through an optimization process that maximizes classification accuracy:
+
+```python
+from feature_selection_ensemble import process_data, scale_order, Step_in_out_ACC
+
+Scoring = process_data(importance_list)
+order, StandardScore = scale_order(Scoring, new_min=0)
+current_ACC, selected_features = Step_in_out_ACC(x_data, y_data, order, numb=200, cv_n=5)
+```
+
+4. Model Training and Evaluation
+After feature selection, train and evaluate a model with the selected features:
+
+```python
+from sklearn.svm import SVC
+from sklearn.metrics import accuracy_score
+
+svm_model = SVC(probability=True)
+svm_model.fit(x_data[selected_features], y_data)
+predictions = svm_model.predict(x_final[selected_features])
+accuracy = accuracy_score(y_final, predictions)
+print(f"Accuracy: {accuracy}")
+```
+
+5. Ensemble Evaluation
+The package also supports evaluating the performance of the ensemble of feature selection methods and providing a final ranking of features:
+
+```python
+from feature_selection_ensemble import Integrated_predictions
+
+Integrated_predictions = svm_model.predict(x_final[selected_features])
+Integrated_acc = accuracy_score(y_final, Integrated_predictions)
+print(f"Integrated Accuracy: {Integrated_acc}")
+```
+
+## Future Development
+
+We plan to further enhance the package by adding:
+
+  - **Customizable Interfaces**: Users will be able to customize which feature selection algorithms and machine learning models to include or exclude.
+  - **Expanded Dataset Support**: Ensure compatibility with various types of genomic and transcriptomic datasets.
+  - **Enhanced Visualization**: Provide visual tools for feature selection and model performance assessment.
+
+## License
+
+This project is licensed under the MIT License.
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit pull requests or open issues if you encounter any problems or have suggestions for improvements.
